@@ -16,8 +16,6 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse 
 import PyPDF2
 import fitz  # PyMuPDF
-import mysql.connector
-from mysql.connector import Error
 import uuid
 from datetime import datetime
 from PIL import Image
