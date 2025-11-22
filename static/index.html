@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document Q&A</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="createNewChat()">
+                    <span>+</span>
+                    <span>New chat</span>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    🌙
+                </button>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="section-title">Upload Document</div>
+
+                <div class="input-method-tabs">
+                    <button class="input-tab active" data-method="file" onclick="switchInputMethod('file')">
+                        <span>📄</span>
+                        <span>File</span>
+                    </button>
+                    <button class="input-tab" data-method="url" onclick="switchInputMethod('url')">
+                        <span>🔗</span>
+                        <span>URL</span>
+                    </button>
+                </div>
+
+                <div class="input-content active" id="fileContent">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".docx,.txt,.pdf">
+                        <label for="fileInput" class="file-label" id="fileLabel">
+                            <span>📎</span>
+                            <span>Choose File</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-content" id="urlContent">
+                    <input type="text" class="url-input" id="urlInput" placeholder="Enter document URL...">
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-modern btn-process" id="processBtn">
+                        <span>⚡</span>
+                        <span>Process</span>
+                    </button>
+                    <button class="btn-modern btn-clear" id="resetBtn">
+                        <span>🗑️</span>
+                        <span>Clear</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat History -->
+            <div class="chat-history-section">
+                <div style="padding: 0 8px 8px 8px;">
+                    <div class="section-title">History</div>
+                </div>
+                <div id="chatHistory">
+                    <div class="no-sessions">Please sign in to view your chat history</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-area">
+            <div class="chat-header">
+                <div class="chat-title">RAG Document Q&A</div>
+                <div class="header-right">
+                    <div class="status-indicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="systemStatus">Not Ready</span>
+                    </div>
+                    <div id="authSection">
+                        <button class="signin-btn" onclick="openAuthModal()">
+                            <span>👤</span>
+                            <span>Sign In</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📚</div>
+                    <div class="empty-state-title">Welcome to RAG Q&A</div>
+                    <div class="empty-state-text">
+                        Please sign in to start chatting with the system. Upload a document or provide a URL to ask
+                        questions.
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area-container">
+                <div class="input-wrapper">
+                    <div class="input-area">
+                        <textarea class="query-input" id="queryInput" placeholder="Please sign in to ask questions..."
+                            rows="1" disabled></textarea>
+                        <button class="send-btn" id="sendBtn" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-modal-content">
+            <!-- Background Particles -->
+            <div class="modal-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+
+            <div class="auth-modal-header">
+                <button class="auth-modal-close" onclick="closeAuthModal()">×</button>
+                <div class="auth-logo">📚</div>
+                <h1 class="auth-title">Welcome to RAG Q&A</h1>
+                <p class="auth-subtitle">Sign in or create an account to continue</p>
+            </div>
+            <div class="auth-modal-body">
+                <!-- Form Tabs -->
+                <div class="form-tabs">
+                    <button class="form-tab active" data-form="signin" onclick="switchAuthForm('signin')">
+                        Sign In
+                    </button>
+                    <button class="form-tab" data-form="signup" onclick="switchAuthForm('signup')">
+                        Sign Up
+                    </button>
+                </div>
+
+                <!-- Sign In Form -->
+                <div class="form-content active" id="signinForm">
+                    <form onsubmit="handleSignIn(event)">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" id="signinUsername" placeholder="Enter your username"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-input" id="signinPassword"
+                                    placeholder="Enter your password" required>
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('signinPassword')">
+                                    👁️
+                                </button>
+                            </div>
+                            <div class="error-message" id="signinError"></div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="signinBtn">
+                            <span>Sign In</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Sign Up Form -->
+                <div class="form-content" id="signupForm">
+                    <form onsubmit="handleSignUp(event)">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" id="signupUsername" placeholder="Choose a username"
+                                required minlength="3">
+                            <div class="error-message" id="usernameError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-input" id="signupPassword"
+                                    placeholder="Create a password" required minlength="6"
+                                    oninput="checkPasswordStrength()">
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('signupPassword')">
+                                    👁️
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strengthFill"></div>
+                                </div>
+                                <div class="strength-text" id="strengthText"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-input" id="confirmPassword"
+                                    placeholder="Confirm your password" required>
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('confirmPassword')">
+                                    👁️
+                                </button>
+                            </div>
+                            <div class="error-message" id="confirmError"></div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="signupBtn">
+                            <span>Create Account</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="confirm-modal" id="confirmDeleteModal">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-title">Delete Chat Session?</div>
+            <div class="confirm-modal-text">
+                This will permanently delete this chat session and all its messages. This action cannot be undo.
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmDelete()">
+                    Cancel
+                </button>
+                <button class="confirm-btn confirm-btn-delete" id="confirmDeleteBtn" onclick="confirmDeleteSession()">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage">
+        <span>✓</span>
+        <span id="successText"></span>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let currentSessionId = null;
+        let currentInputMethod = 'file';
+        let currentUser = null;
+        let currentAuthForm = 'signin';
+        let sessionToDelete = null;
+
+        // =============================
+        // DELETE SESSION FUNCTIONS
+        // =============================
+        function showDeleteConfirm(sessionId, event) {
+            event.stopPropagation();
+            sessionToDelete = sessionId;
+            document.getElementById('confirmDeleteModal').classList.add('show');
+        }
+
+        function closeConfirmDelete() {
+            document.getElementById('confirmDeleteModal').classList.remove('show');
+            sessionToDelete = null;
+        }
+
+        async function confirmDeleteSession() {
+            if (!sessionToDelete || !currentUser?.token) return;
+
+            const deleteBtn = document.getElementById('confirmDeleteBtn');
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+
+            try {
+                const response = await fetch(`${API_BASE}/sessions/${sessionToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': currentUser.token
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus('Session deleted successfully', 'success');
+
+                    // If deleted session was the current one, reset UI
+                    if (sessionToDelete === currentSessionId) {
+                        resetUI();
+                        messages.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📚</div>
+                                <div class="empty-state-title">Welcome to RAG Q&A</div>
+                                <div class="empty-state-text">
+                                    Upload a document or provide a URL to ask questions.
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Reload sessions list
+                    await loadSessions();
+                    closeConfirmDelete();
+                } else {
+                    showStatus(data.message || 'Failed to delete session', 'error');
+                }
+            } catch (error) {
+                console.error('Delete session error:', error);
+                showStatus('Error deleting session', 'error');
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Delete';
+            }
+        }
+
+        // Helper function to extract clean name from source
+        function getSessionDisplayName(source) {
+            if (!source) return 'Chat Session';
+
+            // If it's a URL
+            if (source.startsWith('http://') || source.startsWith('https://')) {
+                try {
+                    const url = new URL(source);
+                    // Get the last part of the path or use hostname
+                    let name = url.pathname.split('/').filter(Boolean).pop() || url.hostname;
+                    // Remove file extensions
+                    name = name.replace(/\.(pdf|docx|txt|html|htm)$/i, '');
+                    // Replace hyphens and underscores with spaces
+                    name = name.replace(/[-_]/g, ' ');
+                    // Capitalize first letter of each word
+                    name = name.split(' ').map(word =>
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    ).join(' ');
+                    return name || 'Web Document';
+                } catch (e) {
+                    return 'Web Document';
+                }
+            }
+
+            // If it's a file path
+            let fileName = source.split(/[\/\\]/).pop(); // Get last part after / or \
+            // Remove UUID prefix if exists (format: uuid_filename)
+            fileName = fileName.replace(/^[a-f0-9\-]{36}_/i, '');
+            // Remove file extension
+            fileName = fileName.replace(/\.(pdf|docx|txt)$/i, '');
+            // Replace hyphens and underscores with spaces
+            fileName = fileName.replace(/[-_]/g, ' ');
+            // Capitalize first letter of each word
+            fileName = fileName.split(' ').map(word =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+
+            return fileName || 'Document';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('confirmDeleteModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeConfirmDelete();
+            }
+        });
+
+        // =============================
+        // CHECK AUTH
+        // =============================
+        async function checkAuth() {
+            const savedUser = localStorage.getItem("ragUser");
+            if (!savedUser) {
+                currentUser = null;
+                updateAuthUI();
+                return;
+            }
+
+            const parsedUser = JSON.parse(savedUser);
+            try {
+                const res = await fetch(`${API_BASE}/verify-token`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ auth_token: parsedUser.token })
+                });
+
+                const data = await res.json();
+
+                if (data.status === "success") {
+                    currentUser = parsedUser;
+                    await loadSessions();
+                } else {
+                    localStorage.removeItem("ragUser");
+                    currentUser = null;
+                }
+            } catch (err) {
+                console.error("Auth check failed:", err);
+                localStorage.removeItem("ragUser");
+                currentUser = null;
+            }
+            updateAuthUI();
+        }
+
+        // Auth Modal Functions
+        function openAuthModal() {
+            console.log('Opening auth modal...');
+            document.getElementById('authModal').classList.add('show');
+            switchAuthForm('signin');
+            clearAuthErrors();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('show');
+            clearAuthErrors();
+            resetAuthForms();
+        }
+
+        function switchAuthForm(formType) {
+            currentAuthForm = formType;
+
+            document.querySelectorAll('.form-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-form="${formType}"]`).classList.add('active');
+
+            document.querySelectorAll('.form-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${formType}Form`).classList.add('active');
+
+            clearAuthErrors();
+        }
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const btn = input.parentElement.querySelector('.password-toggle');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '👁️';
+            } else {
+                input.type = 'password';
+                btn.textContent = '🙈';
+            }
+        }
+
+        function checkPasswordStrength() {
+            const password = document.getElementById('signupPassword').value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+
+            if (password.length === 0) {
+                strengthDiv.classList.remove('show');
+                return;
+            }
+
+            strengthDiv.classList.add('show');
+
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 10) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+            strengthFill.className = 'strength-fill';
+
+            if (strength <= 2) {
+                strengthFill.classList.add('weak');
+                strengthText.textContent = 'Weak password';
+            } else if (strength <= 3) {
+                strengthFill.classList.add('medium');
+                strengthText.textContent = 'Medium password';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.textContent = 'Strong password';
+            }
+        }
+
+        function clearAuthErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+        }
+
+        function showAuthError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        function resetAuthForms() {
+            document.getElementById('signinUsername').value = '';
+            document.getElementById('signinPassword').value = '';
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordStrength').classList.remove('show');
+        }
+
+        // Handle Sign In
+        async function handleSignIn(event) {
+            event.preventDefault();
+            clearAuthErrors();
+
+            const username = document.getElementById('signinUsername').value.trim();
+            const password = document.getElementById('signinPassword').value;
+            const btn = document.getElementById('signinBtn');
+
+            if (!username || !password) {
+                showAuthError('signinError', 'Please fill in all fields');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/signin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const user = {
+                        username: data.user.username,
+                        token: data.user.token
+                    };
+                    localStorage.setItem('ragUser', JSON.stringify(user));
+                    currentUser = user;
+
+                    updateAuthUI();
+                    closeAuthModal();
+                    showStatus('Signed in successfully!', 'success');
+                    await loadSessions();
+                } else {
+                    showAuthError('signinError', data.message || 'Sign in failed');
+                }
+            } catch (error) {
+                showAuthError('signinError', 'Network error. Please try again.');
+                console.error('Sign in error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Sign In</span>';
+            }
+        }
+
+        // Handle Sign Up
+        async function handleSignUp(event) {
+            event.preventDefault();
+            clearAuthErrors();
+
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const btn = document.getElementById('signupBtn');
+
+            if (username.length < 3) {
+                showAuthError('usernameError', 'Username must be at least 3 characters long.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAuthError('confirmError', 'Password must be at least 6 characters long.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAuthError('confirmError', 'Passwords do not match.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const user = {
+                        username: data.user.username,
+                        token: data.user.token
+                    };
+                    localStorage.setItem('ragUser', JSON.stringify(user));
+                    currentUser = user;
+
+                    updateAuthUI();
+                    closeAuthModal();
+                    showStatus('Account created successfully!', 'success');
+                    await loadSessions();
+                } else {
+                    showAuthError('usernameError', data.message || 'Sign up failed');
+                }
+            } catch (error) {
+                showAuthError('usernameError', 'Network error. Please try again.');
+                console.error('Sign up error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Create Account</span>';
+            }
+        }
+
+        document.getElementById('authModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeAuthModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('authModal').classList.contains('show')) {
+                    closeAuthModal();
+                }
+                if (document.getElementById('confirmDeleteModal').classList.contains('show')) {
+                    closeConfirmDelete();
+                }
+            }
+        });
+
+        function updateAuthUI() {
+            const authSection = document.getElementById('authSection');
+            const queryInput = document.getElementById('queryInput');
+            const processBtn = document.getElementById('processBtn');
+
+            if (currentUser) {
+                authSection.innerHTML = `
+                    <div class="user-info">
+                        <div class="user-avatar">👤</div>
+                        <span>${currentUser.username}</span>
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                `;
+                queryInput.placeholder = "Ask a question about your document...";
+                processBtn.disabled = false;
+            } else {
+                authSection.innerHTML = `
+                    <button class="signin-btn" onclick="openAuthModal()">
+                        <span>👤</span>
+                        <span>Sign In</span>
+                    </button>
+                `;
+                queryInput.placeholder = "Please sign in to ask questions...";
+                processBtn.disabled = true;
+
+                document.getElementById('chatHistory').innerHTML = '<div class="no-sessions">Please sign in to view your chat history</div>';
+                resetUI();
+            }
+        }
+
+        async function logout() {
+            try {
+                if (currentUser && currentUser.token) {
+                    await fetch(`${API_BASE}/logout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ auth_token: currentUser.token })
+                    });
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem('ragUser');
+                currentUser = null;
+                updateAuthUI();
+                showStatus('Logged out successfully', 'success');
+
+                resetUI();
+
+                messages.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <div class="empty-state-title">Welcome to RAG Q&A</div>
+                        <div class="empty-state-text">
+                            Please sign in to start chatting with the system. Upload a document or provide a URL to ask questions.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'ragUser') {
+                checkAuth();
+            }
+        });
+
+        // =============================
+        // CHAT HISTORY & SESSIONS
+        // =============================
+        async function loadSessions() {
+            console.log("[loadSessions] Starting…");
+
+            if (!currentUser?.token) {
+                console.warn("[loadSessions] No user token. User not signed in.");
+                document.getElementById('chatHistory').innerHTML =
+                    '<div class="no-sessions">Please sign in to view your chat history</div>';
+                return;
+            }
+
+            try {
+                console.log("[loadSessions] Fetching sessions…");
+
+                const res = await fetch(`${API_BASE}/sessions`, {
+                    headers: { Authorization: currentUser.token },
+                });
+
+                console.log("[loadSessions] Response status:", res.status);
+
+                const data = await res.json();
+                console.log("[loadSessions] Response JSON:", data);
+
+                if (data.status === "success" && Array.isArray(data.sessions)) {
+                    console.log("[loadSessions] Rendering sessions:", data.sessions.length);
+                    renderSessions(data.sessions);
+                } else {
+                    console.warn("[loadSessions] No sessions returned.");
+                    document.getElementById('chatHistory').innerHTML =
+                        '<div class="no-sessions">No chat sessions yet</div>';
+                }
+            } catch (error) {
+                console.error("[loadSessions] Failed to load sessions:", error);
+                document.getElementById('chatHistory').innerHTML =
+                    '<div class="no-sessions">Error loading sessions</div>';
+            }
+        }
+
+        function renderSessions(sessions) {
+            console.log("[renderSessions] Rendering", sessions.length, "sessions");
+
+            const chatHistory = document.getElementById('chatHistory');
+
+            if (sessions.length === 0) {
+                console.warn("[renderSessions] No sessions to display");
+                chatHistory.innerHTML = '<div class="no-sessions">No chat sessions yet</div>';
+                return;
+            }
+
+            chatHistory.innerHTML = sessions.map((session, index) => {
+                console.log(`[renderSessions] Session ${index}:`, session);
+                const displayName = getSessionDisplayName(session.document_source);
+                const isActive = session.session_id === currentSessionId;
+
+                return `
+            <div class="session-item ${isActive ? 'active' : ''}" 
+                onclick="loadSessionHistory('${session.session_id}')">
+                <div class="session-icon">${isActive ? '💬' : '📄'}</div>
+                <div class="session-info">
+                    <div class="session-name">${displayName}</div>
+                    <div class="session-date">
+                        ${new Date(session.created_at).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                })}
+                    </div>
+                </div>
+                <button class="delete-session-btn"
+                        onclick="showDeleteConfirm('${session.session_id}', event)"
+                        title="Delete session">
+                    🗑️
+                </button>
+            </div>
+            ${index < sessions.length - 1 ? '<div class="session-divider"></div>' : ''}
+        `;
+            }).join('');
+        }
+
+        async function loadSessionHistory(sessionId) {
+            console.log("[loadSessionHistory] Loading session:", sessionId);
+
+            if (!currentUser?.token) {
+                console.warn("[loadSessionHistory] No user token");
+                showStatus("Please sign in to load session", "error");
+                return;
+            }
+
+            const clickedSession = document.querySelector(
+                `[onclick="loadSessionHistory('${sessionId}')"]`
+            );
+            if (clickedSession) {
+                console.log("[loadSessionHistory] Marking clicked session as loading");
+                clickedSession.classList.add('loading');
+            }
+
+            try {
+                showLoading();
+                console.log("[loadSessionHistory] Sending load request to server…");
+
+                const loadResponse = await fetch(`${API_BASE}/sessions/${sessionId}/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': currentUser.token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log("[loadSessionHistory] Response status:", loadResponse.status);
+                const loadData = await loadResponse.json();
+                console.log("[loadSessionHistory] Response JSON:", loadData);
+
+                if (loadData.status === 'success') {
+                    console.log("[loadSessionHistory] Session loaded successfully");
+                    currentSessionId = sessionId;
+
+                    document.querySelectorAll('.session-item').forEach(item => {
+                        item.classList.remove('active', 'loading');
+                    });
+                    if (clickedSession) clickedSession.classList.add('active');
+
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.style.opacity = '0';
+
+                    setTimeout(() => {
+                        console.log("[loadSessionHistory] Rendering messages");
+                        messagesDiv.innerHTML = '';
+
+                        if (Array.isArray(loadData.history) && loadData.history.length > 0) {
+                            console.log(`[loadSessionHistory] Loading ${loadData.history.length} messages`);
+                            loadData.history.forEach((msg, index) => {
+                                setTimeout(() => {
+                                    console.log(`[loadSessionHistory] Adding message ${index}`, msg);
+                                    addMessage(msg.message_type, msg.content);
+                                }, index * 50);
+                            });
+                        } else {
+                            console.warn("[loadSessionHistory] No message history found");
+                            messagesDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💬</div>
+                            <div class="empty-state-title">Chat Session</div>
+                            <div class="empty-state-text">
+                                Start a conversation by asking questions about your document.
+                            </div>
+                        </div>
+                    `;
+                        }
+                        messagesDiv.style.opacity = '1';
+                    }, 200);
+
+                    systemStatus.textContent = 'Ready';
+                    statusDot.classList.add('ready');
+                    queryInput.disabled = false;
+                    sendBtn.disabled = false;
+                    queryInput.placeholder = "Ask a question about your document...";
+
+                    showStatus('Session loaded successfully', 'success');
+                } else {
+                    console.error("[loadSessionHistory] Server returned error:", loadData.message);
+                    showStatus(loadData.message || 'Failed to load session', 'error');
+                    if (clickedSession) clickedSession.classList.remove('loading');
+                }
+            } catch (error) {
+                console.error("[loadSessionHistory] Exception:", error);
+                showStatus('Failed to load session', 'error');
+                if (clickedSession) clickedSession.classList.remove('loading');
+            } finally {
+                hideLoading();
+                console.log("[loadSessionHistory] Finished");
+            }
+        }
+
+
+        function switchInputMethod(method) {
+            currentInputMethod = method;
+            document.querySelectorAll('.input-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-method="${method}"]`).classList.add('active');
+
+            document.querySelectorAll('.input-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${method}Content`).classList.add('active');
+
+            if (method === 'file') {
+                document.getElementById('urlInput').value = '';
+            } else {
+                document.getElementById('fileInput').value = '';
+                document.getElementById('fileLabel').innerHTML = '<span>📎</span><span>Choose File</span>';
+                document.getElementById('fileLabel').classList.remove('active');
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeToggle = document.querySelector('.theme-toggle');
+            const currentTheme = html.getAttribute('data-theme');
+
+            if (currentTheme === 'light') {
+                html.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const themeToggle = document.querySelector('.theme-toggle');
+
+            if (savedTheme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        function showStatus(message, type) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message show ${type}`;
+
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 4000);
+        }
+
+        function resetUI() {
+            fileInput.value = '';
+            urlInput.value = '';
+            fileLabel.innerHTML = '<span>📎</span><span>Choose File</span>';
+            fileLabel.classList.remove('active');
+            systemStatus.textContent = 'Not Ready';
+            statusDot.classList.remove('ready');
+            queryInput.disabled = true;
+            sendBtn.disabled = true;
+            queryInput.placeholder = "Please sign in to ask questions...";
+            currentSessionId = null;
+
+            document.querySelectorAll('.session-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // New function for creating a fresh chat
+        function createNewChat() {
+            if (!currentUser) {
+                showStatus("Please sign in first!", "error");
+                return;
+            }
+
+            // Smooth transition effect
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.style.opacity = '0';
+
+            setTimeout(() => {
+                resetUI();
+
+                // Clear messages and show welcome screen
+                messagesDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <div class="empty-state-title">Start a New Conversation</div>
+                        <div class="empty-state-text">
+                            Upload a document or provide a URL to begin asking questions.
+                        </div>
+                    </div>
+                `;
+
+                messagesDiv.style.opacity = '1';
+
+                // Update placeholder
+                queryInput.placeholder = "Upload a document to start chatting...";
+
+                showStatus('Ready for new conversation', 'success');
+            }, 200);
+        }
+
+        window.addEventListener('load', () => {
+            console.log('Page loaded, initializing...');
+            loadTheme();
+            checkAuth();
+        });
+
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const urlInput = document.getElementById('urlInput');
+        const processBtn = document.getElementById('processBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const queryInput = document.getElementById('queryInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const messages = document.getElementById('messages');
+        const systemStatus = document.getElementById('systemStatus');
+        const statusDot = document.getElementById('statusDot');
+        const chatHistory = document.getElementById('chatHistory');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const statusMessage = document.getElementById('statusMessage');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                fileLabel.innerHTML = `<span>✓</span><span>${fileName.length > 15 ? fileName.substring(0, 15) + '...' : fileName}</span>`;
+                fileLabel.classList.add('active');
+            }
+        });
+
+        queryInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+
+        async function initializeSystem() {
+            if (!currentUser?.token) {
+                showStatus("Please sign in first!", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/initialize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': currentUser.token
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    systemStatus.textContent = 'Ready';
+                    statusDot.classList.add('ready');
+                    queryInput.disabled = false;
+                    sendBtn.disabled = false;
+
+                    if (messages.children.length === 0) {
+                        addMessage('bot', 'System ready! You can now ask questions about your document.');
+                    }
+                    showStatus(data.message, 'success');
+                } else {
+                    showStatus(data.message, 'error');
+                }
+            } catch (error) {
+                showStatus(`Initialization error: ${error.message}`, 'error');
+            }
+        }
+
+        processBtn.addEventListener("click", async () => {
+            console.log("[processDocument] Button clicked");
+
+            const file = fileInput.files[0];
+            const url = urlInput.value.trim();
+
+            if (!currentUser?.token) {
+                console.warn("[processDocument] No user token — user not signed in.");
+                showStatus("Please sign in first!", "error");
+                return;
+            }
+
+            // Validate file or URL input
+            if (currentInputMethod === "file" && !file) {
+                console.warn("[processDocument] File method selected, but no file chosen.");
+                showStatus("Please select a file", "error");
+                return;
+            }
+
+            if (currentInputMethod === "url" && !url) {
+                console.warn("[processDocument] URL method selected, but no URL entered.");
+                showStatus("Please enter a URL", "error");
+                return;
+            }
+
+            console.log("[processDocument] Starting document processing…");
+            console.log("[processDocument] Method:", currentInputMethod);
+
+            processBtn.disabled = true;
+            processBtn.innerHTML = "<span>⏳</span><span>Processing...</span>";
+            showStatus('Processing document...', 'info');
+            showLoading();
+
+            try {
+                let response;
+
+                if (currentInputMethod === "file") {
+                    console.log("[processDocument] Sending file to API…");
+                    console.log("[processDocument] File name:", file.name);
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    response = await fetch(`${API_BASE}/process-file`, {
+                        method: "POST",
+                        headers: { Authorization: currentUser.token },
+                        body: formData,
+                    });
+                } else {
+                    console.log("[processDocument] Sending URL to API:", url);
+
+                    response = await fetch(`${API_BASE}/process-url`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: currentUser.token,
+                        },
+                        body: JSON.stringify({ url }),
+                    });
+                }
+
+                console.log("[processDocument] API Response Status:", response.status);
+
+                const data = await response.json();
+                console.log("[processDocument] API Response JSON:", data);
+
+                if (data.status === "success") {
+                    console.log("[processDocument] Document processed successfully!");
+                    console.log("[processDocument] New session_id:", data.session_id);
+
+                    showStatus(data.message, "success");
+                    currentSessionId = data.session_id;
+
+                    console.log("[processDocument] Initializing system after processing…");
+                    await initializeSystem();
+
+                    console.log("[processDocument] Reloading session list…");
+                    await loadSessions();
+                } else {
+                    console.warn("[processDocument] API returned error:", data.message);
+                    showStatus(data.message, "error");
+                }
+            } catch (error) {
+                console.error("[processDocument] Exception occurred:", error);
+                showStatus("Error: " + error.message, "error");
+            } finally {
+                console.log("[processDocument] Finished. Resetting button.");
+                hideLoading();
+                processBtn.disabled = false;
+                processBtn.innerHTML = "<span>⚡</span><span>Process</span>";
+            }
+        });
+
+        resetBtn.addEventListener('click', async () => {
+            if (!confirm('Clear all data?')) return;
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': currentUser?.token || ''
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    resetUI();
+                    showStatus(data.message, 'success');
+                    await loadSessions();
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        sendBtn.addEventListener('click', sendQuery);
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !sendBtn.disabled) {
+                e.preventDefault();
+                sendQuery();
+            }
+        });
+
+        async function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query || !currentUser?.token) {
+                showStatus("Please sign in first!", "error");
+                return;
+            }
+
+            if (!currentSessionId) {
+                showStatus("Please process a document first!", "error");
+                return;
+            }
+
+            addMessage('user', query);
+            queryInput.value = '';
+            queryInput.style.height = 'auto';
+            sendBtn.disabled = true;
+            queryInput.disabled = true;
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot';
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `;
+            messages.appendChild(loadingDiv);
+            messages.scrollTop = messages.scrollHeight;
+
+            try {
+                const response = await fetch(`${API_BASE}/query`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: currentUser.token,
+                    },
+                    body: JSON.stringify({
+                        question: query,
+                        session_id: currentSessionId
+                    }),
+                });
+
+                const data = await response.json();
+                loadingDiv.remove();
+
+                if (data.status === "success") {
+                    addMessage("bot", data.answer);
+                    if (data.session_id && data.session_id !== currentSessionId) {
+                        currentSessionId = data.session_id;
+                    }
+                } else {
+                    addMessage("bot", `Error: ${data.message}`);
+                }
+            } catch (err) {
+                loadingDiv.remove();
+                addMessage("bot", "Error: " + err.message);
+            } finally {
+                sendBtn.disabled = false;
+                queryInput.disabled = false;
+                queryInput.focus();
+            }
+        }
+
+        function addMessage(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const avatar = type === 'user' ? '👤' : '🤖';
+
+            // Enhanced formatting for better bullet points and structure
+            let formattedContent = content
+                // Convert bullet points to proper list items
+                .replace(/^•\s+(.+)$/gm, '<li>$1</li>')
+                // Convert numbered lists
+                .replace(/^(\d+)\.\s+(.+)$/gm, '<li data-number="$1">$2</li>')
+                // Handle bold text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Handle line breaks and paragraphs
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            // Wrap in paragraph if needed
+            if (!formattedContent.includes('<li>') && !formattedContent.includes('<p>')) {
+                formattedContent = '<p>' + formattedContent + '</p>';
+            } else if (formattedContent.includes('<li>')) {
+                // Handle lists
+                let parts = formattedContent.split('<br>');
+                let result = [];
+                let inList = false;
+                let isOrdered = false;
+
+                for (let part of parts) {
+                    if (part.includes('<li>')) {
+                        if (!inList) {
+                            // Check if it's an ordered list
+                            isOrdered = part.includes('data-number');
+                            result.push(isOrdered ? '<ol>' : '<ul>');
+                            inList = true;
+                        }
+                        result.push(part);
+                    } else {
+                        if (inList) {
+                            result.push(isOrdered ? '</ol>' : '</ul>');
+                            inList = false;
+                            isOrdered = false;
+                        }
+                        if (part.trim() && !part.includes('</p>') && !part.includes('<p>')) {
+                            result.push('<p>' + part + '</p>');
+                        } else if (part.trim()) {
+                            result.push(part);
+                        }
+                    }
+                }
+
+                if (inList) {
+                    result.push(isOrdered ? '</ol>' : '</ul>');
+                }
+
+                formattedContent = result.join('');
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-bubble">
+                    <div class="message-content">${formattedContent}</div>
+                </div>
+            `;
+
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function showSuccessMessage(message) {
+            const successMessage = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+
+            successText.textContent = message;
+            successMessage.classList.add('show');
+
+            setTimeout(() => {
+                successMessage.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
